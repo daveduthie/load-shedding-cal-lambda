@@ -1,0 +1,4 @@
+{:name "io.github.daveduthie.load-shedding-cal-lambda.core.ExampleLambda",
+ :request {:event {:pathParameters {:message "Hello world"}},
+           :ctx {}},
+ :propagate true}

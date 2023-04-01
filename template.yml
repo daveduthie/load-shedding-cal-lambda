@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Example basic lambda using `holy-lambda` micro library
+
+Parameters:
+  Timeout:
+    Type: Number
+    Default: 40
+  MemorySize:
+    Type: Number
+    Default: 128
+  Entrypoint:
+    Type: String
+    Default: io.github.daveduthie.load-shedding-cal-lambda.core
+
+Globals:
+  Function:
+    Timeout: !Ref Timeout
+    MemorySize: !Ref MemorySize
+    Environment:
+      Variables:
+        HL_ENTRYPOINT: !Ref Entrypoint
+
+Resources:
+  BabashkaDepsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: BabashkaDepsLayer
+      ContentUri: ./.holy-lambda/bb-clj-deps
+  ExampleLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ExampleLambdaFunction
+      Runtime: provided
+      Handler: io.github.daveduthie.load-shedding-cal-lambda.core.ExampleLambda
+      CodeUri: src
+      # For docker based deployments use:
+      # PackageType: Image
+      # and remove Runtime + CodeUri + Handler
+      Events:
+        HelloEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ExampleHttpApi
+            Path: /
+            Method: GET
+      Layers:
+        - arn:aws:lambda:eu-west-2:575187776284:layer:holy-lambda-babashka-runtime-amd64:1
+        - !Ref BabashkaDepsLayer
+    # For docker based deployments
+    # Metadata:
+    #   Dockerfile: Dockerfile
+    #   DockerContext: .
+    #   DockerTag: v1
+
+  ExampleHttpApi:
+    Type: AWS::Serverless::HttpApi
+
+Outputs:
+  ExampleLambdaEndpoint:
+    Description: Endpoint for ExampleLambdaFunction
+    Value:
+      Fn::Sub: https://${ExampleHttpApi}.execute-api.${AWS::Region}.amazonaws.com
