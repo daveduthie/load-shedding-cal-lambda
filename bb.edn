@@ -1,8 +1,12 @@
-{:deps {io.github.FieryCod/holy-lambda-babashka-tasks
+{:paths ["src"]
+
+ :deps {io.github.FieryCod/holy-lambda-babashka-tasks
         {:git/url   "https://github.com/FieryCod/holy-lambda"
          :deps/root "./modules/holy-lambda-babashka-tasks"
          :sha       "1469bb96b85c2c65a52df9e3a4914dde1b4c816f"}
-        io.github.FieryCod/holy-lambda {:mvn/version "0.6.6"}}
+        io.github.FieryCod/holy-lambda              {:mvn/version "0.6.6"}
+        io.github.FieryCod/holy-lambda-ring-adapter {:mvn/version "0.1.2"}
+        }
 
  ;; Minimal babashka version which should be used in conjuction with holy-lambda
  :min-bb-version "0.3.7"
@@ -41,8 +45,9 @@
                         ;; CodeUri should be `.holy-lambda/pods`
                         ;; For now pods should be declared in `bb.edn`. See: https://github.com/babashka/babashka/issues/768#issuecomment-825016317
                         ;;
-                        ;; `IMPORTANT:` 3rd party babashka compatible libraries should be distributed as a layers (CodeUri: .holy-lambda/bb-clj-deps)
-                        :pods {}
+                        ;; `IMPORTANT:` 3rd party babashka libraries compatible should be distributed as a layers (CodeUri: .holy-lambda/bb-clj-deps)
+                        :pods {retrogradeorbit/bootleg {:version "0.1.9"}}
+
 
                         ;; For `:native` backend you can provide your own bootstrap file
                         :bootstrap-file "bootstrap"
@@ -58,6 +63,8 @@
                                             "--report-unsupported-elements-at-runtime"
                                             "-H:+AllowIncompleteClasspath"
                                             "--no-server"]}}
+
+ :pods {retrogradeorbit/bootleg {:version "0.1.9"}}
 
  :tasks {:requires            ([holy-lambda.tasks])
          hl:docker:run        holy-lambda.tasks/hl:docker:run

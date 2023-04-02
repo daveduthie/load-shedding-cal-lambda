@@ -28,6 +28,11 @@ Resources:
     Properties:
       LayerName: BabashkaDepsLayer
       ContentUri: ./.holy-lambda/bb-clj-deps
+  BabashkaPodsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: BabashkaPodsLayer
+      ContentUri: ./.holy-lambda/pods
   ExampleLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -48,6 +53,7 @@ Resources:
       Layers:
         - arn:aws:lambda:eu-west-2:575187776284:layer:holy-lambda-babashka-runtime-amd64:1
         - !Ref BabashkaDepsLayer
+        - !Ref BabashkaPodsLayer
     # For docker based deployments
     # Metadata:
     #   Dockerfile: Dockerfile
