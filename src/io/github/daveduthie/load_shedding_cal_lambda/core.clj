@@ -46,8 +46,8 @@
                            (ical/event start end (event-title guess stage)))
                       (load-shedding 2)))})
 
-(def ExampleLambda (hlra/ring<->hl-middleware app))
-(h/entrypoint [#'ExampleLambda])
+(def Lambda (hlra/ring<->hl-middleware app))
+(h/entrypoint [#'Lambda])
 
 ;; Executes the body in a safe agent context for native configuration
 ;; generation.

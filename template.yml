@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Example basic lambda using `holy-lambda` micro library
+  Load shedding calendar in ical format
 
 Parameters:
   Timeout:
@@ -33,12 +33,12 @@ Resources:
     Properties:
       LayerName: BabashkaPodsLayer
       ContentUri: ./.holy-lambda/pods
-  ExampleLambdaFunction:
+  LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: ExampleLambdaFunction
+      FunctionName: LambdaFunction
       Runtime: provided
-      Handler: io.github.daveduthie.load-shedding-cal-lambda.core.ExampleLambda
+      Handler: io.github.daveduthie.load-shedding-cal-lambda.core.Lambda
       CodeUri: src
       # For docker based deployments use:
       # PackageType: Image
@@ -47,7 +47,7 @@ Resources:
         HelloEvent:
           Type: HttpApi
           Properties:
-            ApiId: !Ref ExampleHttpApi
+            ApiId: !Ref HttpApi
             Path: /
             Method: GET
       Layers:
@@ -60,11 +60,11 @@ Resources:
     #   DockerContext: .
     #   DockerTag: v1
 
-  ExampleHttpApi:
+  HttpApi:
     Type: AWS::Serverless::HttpApi
 
 Outputs:
-  ExampleLambdaEndpoint:
-    Description: Endpoint for ExampleLambdaFunction
+  LambdaEndpoint:
+    Description: Endpoint for LambdaFunction
     Value:
-      Fn::Sub: https://${ExampleHttpApi}.execute-api.${AWS::Region}.amazonaws.com
+      Fn::Sub: https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
