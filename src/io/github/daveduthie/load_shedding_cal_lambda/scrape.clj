@@ -1,7 +1,8 @@
 (ns io.github.daveduthie.load-shedding-cal-lambda.scrape
   (:require [clojure.string :as str]
+            [io.github.daveduthie.load-shedding-cal-lambda.common :as common]
             [org.httpkit.client :as http])
-  (:import (java.time LocalTime MonthDay Year ZoneId LocalDate)
+  (:import (java.time LocalDate LocalTime MonthDay Year)
            (java.time.format DateTimeFormatter)))
 
 (def ^:private ct-load-shedding-url
@@ -30,8 +31,6 @@
   (parse-date "02 April")
   (parse-date "20 April"))
 
-(def ^:private jhb-zone (ZoneId/of "Africa/Johannesburg"))
-
 ;; TODO: find another "underway until" example and adapt
 (defn- parse-schedule-text
   [line]
@@ -55,12 +54,12 @@
         (update :stage #(Integer/parseInt %))
         (assoc :start (-> date
                           (.atTime start-time)
-                          (.atZone jhb-zone))
+                          (.atZone common/zone))
                :end (-> date
                         (cond-> (not (.isAfter end-time start-time)) (.plusDays
                                                                        1))
                         (.atTime end-time)
-                        (.atZone jhb-zone))))))
+                        (.atZone common/zone))))))
 
 (def schedule-lines
   (->> (-> (re-find #"City customers:((?s).*)Subject to rapid change."
@@ -94,10 +93,10 @@
                      :date date,
                      :start (-> date
                                 (.atTime (LocalTime/of 0 0))
-                                (.atZone jhb-zone)),
+                                (.atZone common/zone)),
                      :end (-> date
                               (.atTime (LocalTime/of 23 59))
-                              (.atZone jhb-zone)),
+                              (.atZone common/zone)),
                      :guess true,
                      :raw/line "Synthetic! Extended last stage to more days"})
         {:keys [stage date]} (last schedule_)]

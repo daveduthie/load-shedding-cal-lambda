@@ -1,5 +1,6 @@
 (ns io.github.daveduthie.load-shedding-cal-lambda.schedule
-  (:import (java.time LocalDate LocalTime MonthDay Year ZoneId)))
+  (:require [io.github.daveduthie.load-shedding-cal-lambda.common :as common])
+  (:import (java.time LocalDate LocalTime)))
 
 (defn- column [day-of-month] (mod (dec day-of-month) 16))
 
@@ -37,8 +38,7 @@
     (map (fn [hour zones]
            (let [start (-> date
                            (.atTime hour)
-                           ;; TODO: remove duplication of zoneid
-                           (.atZone (ZoneId/of "Africa/Johannesburg")))]
+                           (.atZone common/zone))]
              {:start start,
               :end (-> start
                        (.plusHours 2)
