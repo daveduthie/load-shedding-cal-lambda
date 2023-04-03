@@ -1,20 +1,15 @@
 (ns io.github.daveduthie.load-shedding-cal-lambda.scrape
   (:require [clojure.string :as str]
-            [babashka.pods :as pods]
             [org.httpkit.client :as http])
   (:import (java.time LocalTime MonthDay Year ZoneId LocalDate)
            (java.time.format DateTimeFormatter)))
-
-(pods/load-pod 'retrogradeorbit/bootleg "0.1.9")
-
-(require '[pod.retrogradeorbit.bootleg.utils :as hickory.utils]
-         '[pod.retrogradeorbit.hickory.select :as hickory.select])
 
 (def ^:private ct-load-shedding-url
   "https://www.capetown.gov.za/Family%20and%20home/Residential-utility-services/Residential-electricity-services/Load-shedding-and-outages")
 
 (defonce ^:private ct-load-shedding-html
-  (:body @(http/get ct-load-shedding-url)))
+  (:body @#_{:clj-kondo/ignore [:unresolved-var]}
+          (http/get ct-load-shedding-url)))
 
 (def ^:private load-shed-line-re
   #"Stage (\d)(?: \(no load-shedding\))?(: (underway until|\d{2}:\d{2}) (?:- )?(\d{2}:\d{2}))?")
@@ -28,22 +23,7 @@
 
 (defn try-parse-date
   [date-str]
-  (try (parse-date date-str) (catch Exception e nil)))
-
-(defn schedule-text
-  []
-  (let [the-div-contents
-          (->> (hickory.utils/convert-to ct-load-shedding-html :hickory)
-               (hickory.select/select (hickory.select/and
-                                        (hickory.select/tag :div)
-                                        (hickory.select/class "section-pull")
-                                        (hickory.select/nth-child 1)))
-               first
-               :content)]
-    (keep (fn [x]
-            (cond (and (string? x) (not (str/blank? x))) (str/trim x)
-                  (= (:tag x) :strong) (str/trim (first (:content x)))))
-          the-div-contents)))
+  (try (parse-date date-str) (catch Exception _e nil)))
 
 (comment
   (parse-date "2 April")
@@ -61,9 +41,9 @@
 
 (defn- end-time
   [end]
-  (if (or (nil? end) ; omitted if whole day
+  (if (or (nil? end)       ; omitted if whole day
           (= "24:00" end)) ; 24:00 doesn't parse
-    "00:00" ; map to start of next day
+    "00:00"                ; map to start of next day
     end))
 
 (defn parse-times
@@ -82,18 +62,26 @@
                         (.atTime end-time)
                         (.atZone jhb-zone))))))
 
-(defn schedule*
-  []
+(def schedule-lines
+  (->> (-> (re-find #"City customers:((?s).*)Subject to rapid change."
+                    ct-load-shedding-html)
+           second
+           (str/replace #"</?[a-z0-9]+>" ""))
+       str/split-lines
+       (remove str/blank?)
+       (map str/trim)))
+
+(def schedule*
   (into []
         (comp (keep (some-fn parse-schedule-text try-parse-date))
               (partition-by (partial instance? LocalDate))
               (partition-all 2)
               (mapcat (fn [[[date] times]] (map #(parse-times date %) times))))
-        (schedule-text)))
+        schedule-lines))
 
 (defn schedule
   []
-  (let [schedule_ (schedule*)
+  (let [schedule_ schedule*
         extend-to-end-of-day (fn [intvl]
                                (update intvl
                                        :end
@@ -114,14 +102,13 @@
                      :raw/line "Synthetic! Extended last stage to more days"})
         {:keys [stage date]} (last schedule_)]
     (-> schedule_
-        ;; TODO: maybe twitter is a more up-to-date source of info?
         (update (dec (count schedule_)) extend-to-end-of-day)
         (into [(whole-day stage (.plusDays date 1))
                (whole-day stage (.plusDays date 2))
                (whole-day stage (.plusDays date 3))]))))
 
 (comment
-  (schedule*)
+  schedule*
   (schedule))
 
 (comment

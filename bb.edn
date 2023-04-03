@@ -9,7 +9,7 @@
         }
 
  ;; Minimal babashka version which should be used in conjuction with holy-lambda
- :min-bb-version "0.3.7"
+ :min-bb-version "0.8.0"
 
  :holy-lambda/options {
                        :docker {
@@ -46,7 +46,7 @@
                         ;; For now pods should be declared in `bb.edn`. See: https://github.com/babashka/babashka/issues/768#issuecomment-825016317
                         ;;
                         ;; `IMPORTANT:` 3rd party babashka libraries compatible should be distributed as a layers (CodeUri: .holy-lambda/bb-clj-deps)
-                        :pods {retrogradeorbit/bootleg {:version "0.1.9"}}
+                        :pods {}
 
 
                         ;; For `:native` backend you can provide your own bootstrap file
@@ -63,8 +63,6 @@
                                             "--report-unsupported-elements-at-runtime"
                                             "-H:+AllowIncompleteClasspath"
                                             "--no-server"]}}
-
- :pods {retrogradeorbit/bootleg {:version "0.1.9"}}
 
  :tasks {:requires            ([holy-lambda.tasks])
          hl:docker:run        holy-lambda.tasks/hl:docker:run
