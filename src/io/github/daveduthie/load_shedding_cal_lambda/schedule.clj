@@ -11,22 +11,20 @@
 
 (defn- shift [day-of-month] (quot (column day-of-month) 4))
 
-(comment
-  (shift 15)
-  (rem 31 4)
-  (column 31)
-  (shift 31))
-
-(defn- stage->initial-zones [stage] (take stage [0 8 12 4 1 9 13 5]))
+(defn- stage->initial-zones [stage] (vec (take stage [0 8 12 4 1 9 13 5])))
 
 (defn schedule
   [stage day-of-month]
   (when-not (zero? stage)
     (let [zone-seq (drop (+ (shift day-of-month) (offset day-of-month))
-                         (cycle (range 1 17)))]
-      (apply (partial map hash-set)
-        (map (fn [zone-id] (take 12 (drop zone-id zone-seq)))
-          (stage->initial-zones stage))))))
+                         (cycle (range 1 17)))
+          zone-seqs (map (fn [zone-id] (take 12 (drop zone-id zone-seq)))
+                      (stage->initial-zones stage))]
+      (apply (partial map (comp vec sort vector)) zone-seqs))))
+
+(comment
+  (vec (schedule 8 2))
+  :.)
 
 (def ^:private hours (map (fn [hour] (LocalTime/of hour 0)) (range 0 24 2)))
 

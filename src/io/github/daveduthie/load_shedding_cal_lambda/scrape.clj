@@ -19,6 +19,7 @@
 
 (defn- parse-date
   [date-str]
+  ;; FIXME: wrong around new year...
   (-> (MonthDay/parse date-str date-pattern)
       (.atYear (.getValue (Year/now)))))
 

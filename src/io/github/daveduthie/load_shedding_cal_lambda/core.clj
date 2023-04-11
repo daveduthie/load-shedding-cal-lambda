@@ -38,13 +38,20 @@
   (str (format "%sLoad Shedding (Stage %s)" (if guess "[?] " "") stage)))
 
 (defn app
-  ;; TODO: get zone as query param
-  [_req]
-  {:status 200,
-   :headers {"Content-Type" "text/calendar"},
-   :body (ical/ical (map (fn [{:keys [start end stage guess]}]
-                           (ical/event start end (event-title guess stage)))
-                      (load-shedding 2)))})
+  [request]
+  (if-let [zone-id (try (some-> request
+                                :lambda
+                                :event :queryStringParameters
+                                :zone_id Integer/parseInt)
+                        (catch Exception e nil))]
+    {:status 200,
+     :headers {"Content-Type" "text/calendar"},
+     :body (ical/ical (map (fn [{:keys [start end stage guess]}]
+                             (ical/event start end (event-title guess stage)))
+                        (load-shedding zone-id)))}
+    {:status 400,
+     :headers {"Content-Type" "application/json"},
+     :body "{\"message\": \"Missing or malformed zone_id\"}"}))
 
 (def Lambda (hlra/ring<->hl-middleware app))
 (h/entrypoint [#'Lambda])
