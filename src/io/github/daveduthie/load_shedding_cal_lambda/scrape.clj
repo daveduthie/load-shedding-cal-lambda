@@ -12,10 +12,6 @@
   (:body @#_{:clj-kondo/ignore [:unresolved-var]}
           (http/get ct-load-shedding-url)))
 
-(def ^:private load-shed-line-re #"Stage (\d)(?: \(no load-shedding\))?: (underway until|\d{2}:\d{2}) (?:- )?(\d{2}:\d{2})")
-
-(def ^:private load-shed-line-re2 #"Stage (\d) until further notice.")
-
 (def ^:private date-pattern (DateTimeFormatter/ofPattern "d MMMM"))
 
 (defn- parse-date
@@ -33,13 +29,18 @@
   (parse-date "02 April")
   (parse-date "20 April"))
 
+(def ^:private load-shed-line-re
+  #"Stage (\d)(?: \(no load-shedding\))?: (underway until|\d{2}:\d{2}) (?:- )?(\d{2}:\d{2})")
+
+(def ^:private load-shed-line-re2 #"Stage (\d) until further notice.")
+
 ;; TODO: find another "underway until" example and adapt
 (defn- parse-schedule-text
   [line]
   (if-let [[_ stage start end] (re-matches load-shed-line-re line)]
     {:stage stage, :start start, :end end, :raw/line line}
     (when-let [[_ stage] (re-matches load-shed-line-re2 line)]
-      {:stage stage :start "00:00" :end "00:00" :raw/line line})))
+      {:stage stage, :start "00:00", :end "00:00", :raw/line line})))
 
 (defn- end-time
   [end]
@@ -98,8 +99,9 @@
                                 (.atTime (LocalTime/of 0 0))
                                 (.atZone common/zone)),
                      :end (-> date
-                              (.atTime (LocalTime/of 23 59))
-                              (.atZone common/zone)),
+                              (.atTime (LocalTime/of 0 0))
+                              (.atZone common/zone)
+                              (.plusDays 1)),
                      :guess true,
                      :raw/line "Synthetic! Extended last stage to more days"})
         {:keys [stage date]} (last schedule_)]

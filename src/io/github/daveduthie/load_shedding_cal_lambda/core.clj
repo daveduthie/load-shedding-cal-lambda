@@ -1,48 +1,39 @@
 (ns io.github.daveduthie.load-shedding-cal-lambda.core
-  (:require [fierycod.holy-lambda-ring-adapter.core :as hlra]
-            [fierycod.holy-lambda.agent :as agent]
-            [fierycod.holy-lambda.core :as h]
-            [io.github.daveduthie.load-shedding-cal-lambda.ical :as ical]
-            [io.github.daveduthie.load-shedding-cal-lambda.timetable :as
-             timetable]
-            [io.github.daveduthie.load-shedding-cal-lambda.scrape :as scrape])
+  (:require
+    [fierycod.holy-lambda-ring-adapter.core :as hlra]
+    [fierycod.holy-lambda.agent :as agent]
+    [fierycod.holy-lambda.core :as h]
+    [io.github.daveduthie.load-shedding-cal-lambda.ical :as ical]
+    [io.github.daveduthie.load-shedding-cal-lambda.interval :as interval]
+    [io.github.daveduthie.load-shedding-cal-lambda.scrape :as scrape]
+    [io.github.daveduthie.load-shedding-cal-lambda.timetable :as timetable])
   (:gen-class))
 
-(defn valid-interval? [{:keys [start end]}] (.isBefore start end))
-
-(defn intersection
-  [{s1 :start, e1 :end} {s2 :start, e2 :end}]
-  (let [later-start (if (.isAfter s1 s2) s1 s2)
-        earlier-end (if (.isBefore e1 e2) e1 e2)
-        intvl {:start later-start, :end earlier-end}]
-    (when (valid-interval? intvl) intvl)))
-
-(defn load-shedding
+(defn load-shedding-for-zone
   [zone]
   (let [schedule (scrape/schedule)]
     (mapcat (fn [{:keys [stage start guess], :as intvl}]
-              (let [schedule-for-date (timetable/timetable-for-stage-and-zone
-                                        stage
-                                        zone
-                                        (.toLocalDate start))]
+              (let [timetable (timetable/timetable-for-stage-and-zone
+                                stage
+                                zone
+                                (.toLocalDate start))]
                 (into []
-                      (comp (keep (partial intersection intvl))
+                      (comp (keep (partial interval/intersection intvl))
                             (map #(assoc %
                                     :stage stage
                                     :guess guess)))
-                      schedule-for-date)))
+                      timetable)))
       schedule)))
-
-(defn- event-title
-  [guess stage]
-  (str (format "%sLoad Shedding (Stage %s)" (if guess "[?] " "") stage)))
 
 (defn- get-ical
   [zone-id]
-  (ical/ical
-    (map (fn [{:keys [start end stage guess]}]
-           (ical/event start (.plusMinutes end 30) (event-title guess stage)))
-      (load-shedding zone-id))))
+  (ical/ical (map (fn [{:keys [start end stage guess]}]
+                    (ical/event start
+                                (.plusMinutes end 30)
+                                (format "%sLoad Shedding (Stage %s)"
+                                        (if guess "[?] " "")
+                                        stage)))
+               (load-shedding-for-zone zone-id))))
 
 (defn app
   [request]
@@ -74,4 +65,4 @@
                                       end
                                       (str (format "Load Shedding (Stage %s)"
                                                    stage))))
-                     (load-shedding 2)))))
+                     (load-shedding-for-zone 2)))))
