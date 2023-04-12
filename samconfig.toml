@@ -5,5 +5,5 @@ resolve_s3 = true
 s3_prefix = "load-shedding-cal"
 region = "eu-west-2"
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "Timeout=\"40\" MemorySize=\"128\" Entrypoint=\"io.github.daveduthie.load-shedding-cal-lambda.core\""
+parameter_overrides = "Timeout=\"10\" MemorySize=\"128\" Entrypoint=\"io.github.daveduthie.load-shedding-cal-lambda.core\""
 image_repositories = []
