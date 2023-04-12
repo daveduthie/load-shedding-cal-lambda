@@ -12,8 +12,9 @@
   (:body @#_{:clj-kondo/ignore [:unresolved-var]}
           (http/get ct-load-shedding-url)))
 
-(def ^:private load-shed-line-re
-  #"Stage (\d)(?: \(no load-shedding\))?(: (underway until|\d{2}:\d{2}) (?:- )?(\d{2}:\d{2}))?")
+(def ^:private load-shed-line-re #"Stage (\d)(?: \(no load-shedding\))?: (underway until|\d{2}:\d{2}) (?:- )?(\d{2}:\d{2})")
+
+(def ^:private load-shed-line-re2 #"Stage (\d) until further notice.")
 
 (def ^:private date-pattern (DateTimeFormatter/ofPattern "d MMMM"))
 
@@ -35,9 +36,10 @@
 ;; TODO: find another "underway until" example and adapt
 (defn- parse-schedule-text
   [line]
-  ;; TODO: improve regex to drop _start-end group
-  (when-let [[_ stage _start-end start end] (re-matches load-shed-line-re line)]
-    {:stage stage, :start start, :end end, :raw/line line}))
+  (if-let [[_ stage start end] (re-matches load-shed-line-re line)]
+    {:stage stage, :start start, :end end, :raw/line line}
+    (when-let [[_ stage] (re-matches load-shed-line-re2 line)]
+      {:stage stage :start "00:00" :end "00:00" :raw/line line})))
 
 (defn- end-time
   [end]
@@ -110,9 +112,3 @@
 (comment
   schedule*
   (schedule))
-
-(comment
-  (import '(java.time ZonedDateTime))
-  (java.util.Date/from (.toInstant (ZonedDateTime/now)))
-  (tap> (parse-times "21 March" (parse-schedule-text "Stage 1: 16:00 - 22:00")))
-  :.)

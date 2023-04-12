@@ -3,8 +3,8 @@
             [fierycod.holy-lambda.agent :as agent]
             [fierycod.holy-lambda.core :as h]
             [io.github.daveduthie.load-shedding-cal-lambda.ical :as ical]
-            [io.github.daveduthie.load-shedding-cal-lambda.schedule :as
-             schedule]
+            [io.github.daveduthie.load-shedding-cal-lambda.timetable :as
+             timetable]
             [io.github.daveduthie.load-shedding-cal-lambda.scrape :as scrape])
   (:gen-class))
 
@@ -21,10 +21,10 @@
   [zone]
   (let [schedule (scrape/schedule)]
     (mapcat (fn [{:keys [stage start guess], :as intvl}]
-              (let [schedule-for-date (schedule/load-shedding-for-zone
+              (let [schedule-for-date (timetable/timetable-for-stage-and-zone
                                         stage
-                                        (.toLocalDate start)
-                                        zone)]
+                                        zone
+                                        (.toLocalDate start))]
                 (into []
                       (comp (keep (partial intersection intvl))
                             (map #(assoc %
@@ -43,7 +43,7 @@
                                 :lambda
                                 :event :queryStringParameters
                                 :zone_id Integer/parseInt)
-                        (catch Exception e nil))]
+                        (catch Exception _e nil))]
     {:status 200,
      :headers {"Content-Type" "text/calendar"},
      :body (ical/ical (map (fn [{:keys [start end stage guess]}]
