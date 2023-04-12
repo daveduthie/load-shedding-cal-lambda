@@ -37,6 +37,13 @@
   [guess stage]
   (str (format "%sLoad Shedding (Stage %s)" (if guess "[?] " "") stage)))
 
+(defn- get-ical
+  [zone-id]
+  (ical/ical
+    (map (fn [{:keys [start end stage guess]}]
+           (ical/event start (.plusMinutes end 30) (event-title guess stage)))
+      (load-shedding zone-id))))
+
 (defn app
   [request]
   (if-let [zone-id (try (some-> request
@@ -46,9 +53,7 @@
                         (catch Exception _e nil))]
     {:status 200,
      :headers {"Content-Type" "text/calendar"},
-     :body (ical/ical (map (fn [{:keys [start end stage guess]}]
-                             (ical/event start end (event-title guess stage)))
-                        (load-shedding zone-id)))}
+     :body (get-ical zone-id)}
     {:status 400,
      :headers {"Content-Type" "application/json"},
      :body "{\"message\": \"Missing or malformed zone_id\"}"}))
