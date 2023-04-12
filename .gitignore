@@ -32,3 +32,4 @@ choly.egg-info
 template-modified.yml
 /.cpcache/
 /.lsp/.cache
+/.aws-sam/build.toml
